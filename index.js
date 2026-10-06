@@ -36,7 +36,7 @@ app.get('/prontuarios',async (req, res) => {
  } catch (error) {
     res.status(500).json({
         mensagem:"erro interno do servidor!",
-        detalhes: error.menssage 
+        detalhes: error.message 
     });
  }
 })
@@ -45,13 +45,13 @@ app.get('/paciente/:id',async (req, res) => {
  try {
     const [rows]=await db.execute("SELECT * FROM `pacientes` WHERE id = ?",[id]);
     if(rows.length===0){
-        return res.status(404).json("paciente não encontrado");
+        return res.status(404).json({mensagem:"paciente não encontrado"});
     }
     res.status(200).json(rows[0]);
  } catch (error) {
     res.status(500).json({
         mensagem:"erro interno do servidor!",
-        detalhes: error.menssage 
+        detalhes: error.message 
     });
  }
 })
@@ -60,7 +60,7 @@ app.post('/paciente',async(req,res)=>{
     if(!nome||!idade||!altura||!peso){
            res.status(400).json({
         mensagem:"bad request!",
-        detalhes: error.menssage 
+        detalhes: error.message 
     });
     }
     const {imc,status}= calcularIMC(Number(peso),Number(altura));
@@ -79,11 +79,48 @@ app.post('/paciente',async(req,res)=>{
     } catch (error) {
          res.status(500).json({
         mensagem:"erro interno do servidor!",
-        detalhes: error.menssage 
+        detalhes: error.message 
     }); 
     }
 })
+app.delete('/paciente/:id',async (req, res) => {
+    const {id}= req.params;//pegar o parametro do id
+ try {
+    const [rows]=await db.execute("DELETE FROM `pacientes` WHERE id = ?",[id]);
+    if(rows.affectedRows===0){
+        return res.status(404).json({mensagem:"paciente não encontrado"});
+    }
+    res.status(200).json({mensagem:"paciente removido com sucesso"});
+ } catch (error) {
+    res.status(500).json({
+        mensagem:"erro interno do servidor!",
+        detalhes: error.message
+    });
+ }
+})
 
+app.put('/paciente/:id', async (req, res) => {
+    const { id } = req.params;
+    const { nome, idade, altura, peso } = req.body;
+    if (!nome || !idade || !altura || !peso) {
+        res.status(400).json({
+            mensagem: " Solicitação Inválida!",
+            detalhes: error.message
+        });
+    }
+    const { imc, status } = calcularIMC(Number(peso), Number(altura));
+    try {
+        const [resultado] = await db.execute("UPDATE `pacientes` SET `nome` = ?, `idade` = ?, `altura` = ?, `peso` = ?, `imc` = ?, `status` = ? WHERE `pacientes`.`id` = ?;", [nome, idade, altura, peso, imc, status, id]);
+        if (resultado.affectedRows === 0) {
+            return res.status(404).json({ mensagem: "Paciente não encontrado!" });
+        }
+        res.status(200).json({ mensagem: "Paciente atualizado com sucesso." })
+    } catch (error) {
+        res.status(500).json({
+            mensagem: "Erro interno do servidor!",
+            detalhes: error.message
+        });
+    }});
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`)
 })
